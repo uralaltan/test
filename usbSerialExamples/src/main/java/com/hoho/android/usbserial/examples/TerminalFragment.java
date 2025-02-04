@@ -198,13 +198,19 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
      * Serial + UI
      */
     private void connect() {
+        if (deviceId == 0) {
+            // you’re using skip=1 and passing in device=0 to skip real USB
+            status("Skipping real USB connection (deviceId=0).");
+            return;
+        }
+
         UsbDevice device = null;
         UsbManager usbManager = (UsbManager) getActivity().getSystemService(Context.USB_SERVICE);
         for(UsbDevice v : usbManager.getDeviceList().values())
             if(v.getDeviceId() == deviceId)
                 device = v;
         if(device == null) {
-            status("connection failed: device not found");
+            status("No matching USB device found. (deviceId=\" + deviceId + \")");
             return;
         }
         UsbSerialDriver driver = UsbSerialProber.getDefaultProber().probeDevice(device);
