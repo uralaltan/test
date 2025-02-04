@@ -3,10 +3,10 @@ package com.hoho.android.usbserial.examples;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 public class MainActivity extends AppCompatActivity implements FragmentManager.OnBackStackChangedListener {
 
@@ -19,10 +19,10 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        getSupportFragmentManager().addOnBackStackChangedListener(this);
+
         if (savedInstanceState == null) {
             if (SKIP_TO_TERMINAL == 1) {
-                // =============== Skip directly to TerminalFragment =================
-                // 1) Create a TerminalFragment and supply "dummy" or default arguments
                 Bundle args = new Bundle();
                 args.putInt("device", 0);
                 args.putInt("port", 0);
@@ -32,22 +32,25 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
                 Fragment terminalFragment = new TerminalFragment();
                 terminalFragment.setArguments(args);
 
-                // 2) Replace the container with TerminalFragment
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment, terminalFragment, "terminal")
                         .commit();
             } else {
-                // =============== Normal usage: show DevicesFragment =================
                 getSupportFragmentManager().beginTransaction()
                         .add(R.id.fragment, new DevicesFragment(), "devices")
                         .commit();
             }
         }
+        onBackStackChanged();
     }
 
     @Override
     public void onBackStackChanged() {
-        getSupportActionBar().setDisplayHomeAsUpEnabled(getSupportFragmentManager().getBackStackEntryCount()>0);
+        boolean canGoBack = getSupportFragmentManager().getBackStackEntryCount() > 0;
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(canGoBack);
+            getSupportActionBar().setDisplayShowHomeEnabled(canGoBack);
+        }
     }
 
     @Override
@@ -58,12 +61,12 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
 
     @Override
     protected void onNewIntent(Intent intent) {
-        if("android.hardware.usb.action.USB_DEVICE_ATTACHED".equals(intent.getAction())) {
-            TerminalFragment terminal = (TerminalFragment)getSupportFragmentManager().findFragmentByTag("terminal");
-            if (terminal != null)
-                terminal.status("USB device detected");
-        }
         super.onNewIntent(intent);
+        if ("android.hardware.usb.action.USB_DEVICE_ATTACHED".equals(intent.getAction())) {
+            TerminalFragment terminal = (TerminalFragment) getSupportFragmentManager().findFragmentByTag("terminal");
+            if (terminal != null) {
+                terminal.status("USB device detected");
+            }
+        }
     }
-
 }
