@@ -25,8 +25,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,10 +38,12 @@ import androidx.fragment.app.Fragment;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
+import com.hoho.android.usbserial.util.HexDump;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.EnumSet;
 
 public class TerminalFragment extends Fragment implements SerialInputOutputManager.Listener {
 
@@ -48,25 +52,24 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     private static final int WRITE_WAIT_MILLIS = 2000;
     private static final int READ_WAIT_MILLIS  = 2000;
 
-    // USB/Serial config
+    // USB/Serial configuration and mode
     private int deviceId = 0;
     private int portNum  = 0;
     private int baudRate = 19200;
     private boolean withIoManager = true;
-
-    // "Mode" controls which page or set of buttons are shown
-    // e.g. "main", "location", "actuator", etc.
+    // Custom mode used to show different button groups (e.g., "location", "actuator", etc.)
     private String mode = "main";
 
-    // Keep track of permission & connection
+    // USB connection members
     private UsbSerialPort usbSerialPort;
     private UsbPermission usbPermission = UsbPermission.Unknown;
     private SerialInputOutputManager usbIoManager;
     private boolean connected = false;
 
-    // For UI updates
+    // UI and control-line helper
     private final Handler mainLooper;
     private TextView receiveText;
+    private ControlLines controlLines;
 
     private final BroadcastReceiver broadcastReceiver;
 
@@ -74,7 +77,7 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(INTENT_ACTION_GRANT_USB.equals(intent.getAction())) {
+                if (INTENT_ACTION_GRANT_USB.equals(intent.getAction())) {
                     usbPermission = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
                             ? UsbPermission.Granted : UsbPermission.Denied;
                     connect();
@@ -90,10 +93,11 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(false);   // No menu
-        setRetainInstance(true);    // Retain across config changes
+        // Enable the options menu if needed
+        setHasOptionsMenu(false);
+        // Retain instance for configuration changes
+        setRetainInstance(true);
 
-        // Grab arguments (device, port, baud, mode, etc.)
         if (getArguments() != null) {
             deviceId     = getArguments().getInt("device", 0);
             portNum      = getArguments().getInt("port", 0);
@@ -123,15 +127,14 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     @Override
     public void onResume() {
         super.onResume();
-        // If not connected yet, and permission is not denied, try connecting
-        if(!connected && (usbPermission == UsbPermission.Unknown || usbPermission == UsbPermission.Granted)) {
+        if (!connected && (usbPermission == UsbPermission.Unknown || usbPermission == UsbPermission.Granted)) {
             mainLooper.post(this::connect);
         }
     }
 
     @Override
     public void onPause() {
-        if(connected) {
+        if (connected) {
             status("disconnected");
             disconnect();
         }
@@ -139,7 +142,7 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     }
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     * Inflate UI (Single Layout for all modes)
+     * Inflate UI and set up custom buttons
      * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     @Override
     public View onCreateView(
@@ -147,141 +150,130 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
             ViewGroup container,
             Bundle savedInstanceState
     ) {
-        // We use the same layout each time
+        // Inflate the common layout
         View view = inflater.inflate(R.layout.fragment_terminal, container, false);
 
-        // 1) Basic UI references
+        // Basic UI references
         receiveText = view.findViewById(R.id.receive_text);
         receiveText.setTextColor(getResources().getColor(R.color.colorRecieveText));
         receiveText.setMovementMethod(ScrollingMovementMethod.getInstance());
 
-        EditText sendText    = view.findViewById(R.id.send_text);
-        ImageButton sendBtn  = view.findViewById(R.id.send_btn);
-        Button receiveBtn    = view.findViewById(R.id.receive_btn);
+        EditText sendText = view.findViewById(R.id.send_text);
+        ImageButton sendBtn = view.findViewById(R.id.send_btn);
+        Button receiveBtn = view.findViewById(R.id.receive_btn);
 
-        // 2) Sub-page or “mode” buttons
-        Button buttonGoLocation = view.findViewById(R.id.button_go_location);
-        Button buttonGoActuator = view.findViewById(R.id.button_go_actuator);
-        Button buttonGoLoadCell = view.findViewById(R.id.button_go_loadcell);
-        Button buttonGoLinear  = view.findViewById(R.id.button_go_linear_pot);
-
-        // 3) If we have I/O Manager, we read automatically, so we can hide the manual read button
-        Button buttonLocationOn  = view.findViewById(R.id.button_location_on);
-        Button buttonLocationOff = view.findViewById(R.id.button_location_off);
-
-        Button buttonActOn  = view.findViewById(R.id.button_actuator_on);
-        Button buttonActOff = view.findViewById(R.id.button_actuator_off);
-
-        Button buttonLoadOn  = view.findViewById(R.id.button_loadcell_on);
-        Button buttonLoadOff = view.findViewById(R.id.button_loadcell_off);
-
-        Button buttonLinOn  = view.findViewById(R.id.button_linearpot_on);
-        Button buttonLinOff = view.findViewById(R.id.button_linearpot_off);
-
-        // 4) The “send” button to write text from the EditText
         sendBtn.setOnClickListener(v -> {
             String str = sendText.getText().toString().trim();
             send(str);
         });
 
-        // 5) Show/hide each group of buttons depending on the “mode”
+        // Custom sub-page buttons for different modes
+        Button buttonGoLocation = view.findViewById(R.id.button_go_location);
+        Button buttonGoActuator = view.findViewById(R.id.button_go_actuator);
+        Button buttonGoLoadCell = view.findViewById(R.id.button_go_loadcell);
+        Button buttonGoLinear  = view.findViewById(R.id.button_go_linear_pot);
+        Button buttonGoRotary = view.findViewById(R.id.button_go_rotary);
+
+        Button buttonLocationOn  = view.findViewById(R.id.button_location_on);
+        Button buttonLocationOff = view.findViewById(R.id.button_location_off);
+        Button buttonActOn  = view.findViewById(R.id.button_actuator_on);
+        Button buttonActOff = view.findViewById(R.id.button_actuator_off);
+        Button buttonLoadOn  = view.findViewById(R.id.button_loadcell_on);
+        Button buttonLoadOff = view.findViewById(R.id.button_loadcell_off);
+        Button buttonLinOn  = view.findViewById(R.id.button_linearpot_on);
+        Button buttonLinOff = view.findViewById(R.id.button_linearpot_off);
+        Button buttonRotaryOn = view.findViewById(R.id.button_rotary_on);
+        Button buttonRotaryOff = view.findViewById(R.id.button_rotary_off);
+
+        LinearLayout sendContainer = view.findViewById(R.id.send_container);
+
+        // Show/hide groups depending on mode (if mode is "main", show go buttons; otherwise show the respective ON/OFF buttons)
         switch (mode) {
             case "location":
-                //  Hide main "go to" buttons
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
 
-                // Show location ON/OFF
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+
                 buttonLocationOn.setVisibility(View.VISIBLE);
                 buttonLocationOff.setVisibility(View.VISIBLE);
 
-                // Hide other pages' ON/OFF
                 buttonActOn.setVisibility(View.GONE);
                 buttonActOff.setVisibility(View.GONE);
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                // Attach click listeners
-                buttonLocationOn.setOnClickListener(v -> {
-                    // do location ON logic
-                    send("LOCATION_ON");
-                });
-                buttonLocationOff.setOnClickListener(v -> {
-                    // do location OFF logic
-                    send("LOCATION_OFF");
-                });
+                buttonLocationOn.setOnClickListener(v -> send("LOCATION_ON"));
+                buttonLocationOff.setOnClickListener(v -> send("LOCATION_OFF"));
                 break;
 
             case "actuator":
-                // Hide main "go" buttons
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
 
-                // Show only actuator ON/OFF
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+
                 buttonActOn.setVisibility(View.VISIBLE);
                 buttonActOff.setVisibility(View.VISIBLE);
 
-                // Hide location, loadCell, linearPot
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                // Attach click listeners
-                buttonActOn.setOnClickListener(v -> {
-                    // Actuator ON
-                    send("ACT_ON");
-                });
-                buttonActOff.setOnClickListener(v -> {
-                    // Actuator OFF
-                    send("ACT_OFF");
-                });
+                buttonActOn.setOnClickListener(v -> send("ACT_ON"));
+                buttonActOff.setOnClickListener(v -> send("ACT_OFF"));
                 break;
 
             case "loadcell":
-                // Hide main "go" buttons
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
 
-                // Show loadCell ON/OFF
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+
                 buttonLoadOn.setVisibility(View.VISIBLE);
                 buttonLoadOff.setVisibility(View.VISIBLE);
 
-                // Hide other pages
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
                 buttonActOn.setVisibility(View.GONE);
                 buttonActOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                // Clicks
                 buttonLoadOn.setOnClickListener(v -> send("LOAD_ON"));
                 buttonLoadOff.setOnClickListener(v -> send("LOAD_OFF"));
                 break;
 
             case "linear":
-                // Hide main "go" buttons
+                buttonGoRotary.setVisibility(View.GONE);
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
 
-                // Show linear ON/OFF
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+
                 buttonLinOn.setVisibility(View.VISIBLE);
                 buttonLinOff.setVisibility(View.VISIBLE);
 
-                // Hide others
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
                 buttonActOn.setVisibility(View.GONE);
@@ -289,20 +281,43 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
 
-                // Clicks
                 buttonLinOn.setOnClickListener(v -> send("LIN_ON"));
                 buttonLinOff.setOnClickListener(v -> send("LIN_OFF"));
                 break;
 
+            case "rotary":
+                buttonGoRotary.setVisibility(View.GONE);
+                buttonGoLocation.setVisibility(View.GONE);
+                buttonGoActuator.setVisibility(View.GONE);
+                buttonGoLoadCell.setVisibility(View.GONE);
+                buttonGoLinear.setVisibility(View.GONE);
+
+                buttonRotaryOn.setVisibility(View.VISIBLE);
+                buttonRotaryOff.setVisibility(View.VISIBLE);
+
+                buttonLinOn.setVisibility(View.GONE);
+                buttonLinOff.setVisibility(View.GONE);
+
+                buttonLocationOn.setVisibility(View.GONE);
+                buttonLocationOff.setVisibility(View.GONE);
+                buttonActOn.setVisibility(View.GONE);
+                buttonActOff.setVisibility(View.GONE);
+                buttonLoadOn.setVisibility(View.GONE);
+                buttonLoadOff.setVisibility(View.GONE);
+
+                buttonRotaryOn.setOnClickListener(v -> send("ROT_ON"));
+                buttonRotaryOff.setOnClickListener(v -> send("ROT_OFF"));
+                break;
+
             case "main":
             default:
-                // MAIN => show the 4 "go" buttons, hide all ON/OFF
+                // Main mode: show the go buttons and hide the ON/OFF buttons
                 buttonGoLocation.setVisibility(View.VISIBLE);
                 buttonGoActuator.setVisibility(View.VISIBLE);
                 buttonGoLoadCell.setVisibility(View.VISIBLE);
                 buttonGoLinear.setVisibility(View.VISIBLE);
+                buttonGoRotary.setVisibility(View.VISIBLE);
 
-                // Hide the sub-page ON/OFF
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
                 buttonActOn.setVisibility(View.GONE);
@@ -311,25 +326,28 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLoadOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
 
-                // "Go to LOCATION page"
-                buttonGoLocation.setOnClickListener(v -> {
-                    goToSubPage("location");
-                });
-                // "Go to ACTUATOR page"
-                buttonGoActuator.setOnClickListener(v -> {
-                    goToSubPage("actuator");
-                });
-                // "Go to LOAD CELL page"
-                buttonGoLoadCell.setOnClickListener(v -> {
-                    goToSubPage("loadcell");
-                });
-                // "Go to LINEAR POT page"
-                buttonGoLinear.setOnClickListener(v -> {
-                    goToSubPage("linear");
-                });
+                sendContainer.setVisibility(View.GONE);
+
+                buttonGoLocation.setOnClickListener(v -> goToSubPage("location"));
+                buttonGoActuator.setOnClickListener(v -> goToSubPage("actuator"));
+                buttonGoLoadCell.setOnClickListener(v -> goToSubPage("loadcell"));
+                buttonGoLinear.setOnClickListener(v -> goToSubPage("linear"));
+                buttonGoRotary.setOnClickListener(v -> goToSubPage("rotary"));
                 break;
         }
+
+        // If using IO Manager, hide the manual read button; otherwise attach its listener.
+        if (withIoManager) {
+            receiveBtn.setVisibility(View.GONE);
+        } else {
+            receiveBtn.setOnClickListener(v -> read());
+        }
+
+        // Initialize control-lines (for toggling RTS/DTR and monitoring other signals)
+        controlLines = new ControlLines(view);
 
         return view;
     }
@@ -337,39 +355,60 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     private void goToSubPage(String subMode) {
         TerminalFragment fragment = new TerminalFragment();
         Bundle args = new Bundle();
-        // Pass along the same USB device config if needed
         args.putInt("device", deviceId);
         args.putInt("port", portNum);
         args.putInt("baud", baudRate);
         args.putBoolean("withIoManager", withIoManager);
-
-        // Set the new mode
         args.putString("mode", subMode);
-
         fragment.setArguments(args);
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment, fragment, "terminal")
-                .addToBackStack(null) // so user can press back arrow
+                .addToBackStack(null)
                 .commit();
     }
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, MenuInflater inflater) {
-        // If you had menu items, you'd inflate them here
+        // Inflate options menu if needed
+        inflater.inflate(R.menu.menu_terminal, menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle menu clicks if any
-        return super.onOptionsItemSelected(item);
+        int id = item.getItemId();
+        if (id == R.id.clear) {
+            receiveText.setText("");
+            return true;
+        } else if (id == R.id.send_break) {
+            if (!connected) {
+                Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
+            } else {
+                try {
+                    usbSerialPort.setBreak(true);
+                    Thread.sleep(100);
+                    usbSerialPort.setBreak(false);
+                    SpannableStringBuilder spn = new SpannableStringBuilder();
+                    spn.append("send <break>\n");
+                    spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorSendText)),
+                            0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    receiveText.append(spn);
+                } catch (UnsupportedOperationException ignored) {
+                    Toast.makeText(getActivity(), "BREAK not supported", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getActivity(), "BREAK failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
+        }
     }
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     * SerialInputOutputManager.Listener
+     * SerialInputOutputManager.Listener methods
      * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     @Override
     public void onNewData(byte[] data) {
-        // Called from SerialInputOutputManager’s background thread
         mainLooper.post(() -> receive(data));
     }
 
@@ -382,15 +421,13 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     }
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     * Connect / Disconnect
+     * Connect / Disconnect / Serial operations
      * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     private void connect() {
-        if(deviceId == 0) {
-            // We skip actual hardware connection if device=0
+        if (deviceId == 0) {
             status("Skipping real USB connection (deviceId=0).");
             return;
         }
-
         UsbManager usbManager = (UsbManager) getActivity().getSystemService(Context.USB_SERVICE);
         UsbDevice device = null;
         for (UsbDevice v : usbManager.getDeviceList().values()) {
@@ -400,27 +437,24 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
             }
         }
         if (device == null) {
-            status("No matching USB device found. (deviceId=" + deviceId + ")");
+            status("connection failed: device not found (deviceId=" + deviceId + ")");
             return;
         }
-
         UsbSerialDriver driver = UsbSerialProber.getDefaultProber().probeDevice(device);
         if (driver == null) {
-            // Maybe it's a custom device
             driver = CustomProber.getCustomProber().probeDevice(device);
         }
         if (driver == null) {
             status("connection failed: no driver for device");
             return;
         }
-        if (driver.getPorts().size() < portNum) {
+        if (driver.getPorts().size() <= portNum) {
             status("connection failed: not enough ports at device");
             return;
         }
-
         usbSerialPort = driver.getPorts().get(portNum);
         UsbDeviceConnection usbConnection = usbManager.openDevice(driver.getDevice());
-        if (usbConnection == null && usbPermission == UsbPermission.Unknown && !usbManager.hasPermission(device)) {
+        if (usbConnection == null && usbPermission == UsbPermission.Unknown && !usbManager.hasPermission(driver.getDevice())) {
             usbPermission = UsbPermission.Requested;
             int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_MUTABLE : 0;
             Intent intent = new Intent(INTENT_ACTION_GRANT_USB);
@@ -430,11 +464,10 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
             return;
         }
         if (usbConnection == null) {
-            if (!usbManager.hasPermission(device)) {
+            if (!usbManager.hasPermission(driver.getDevice()))
                 status("connection failed: permission denied");
-            } else {
+            else
                 status("connection failed: open failed");
-            }
             return;
         }
 
@@ -451,6 +484,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
             }
             status("connected");
             connected = true;
+            // Start control-lines management after a successful connection.
+            controlLines.start();
         } catch (Exception e) {
             status("connection failed: " + e.getMessage());
             disconnect();
@@ -459,6 +494,7 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
 
     private void disconnect() {
         connected = false;
+        controlLines.stop();
         if (usbIoManager != null) {
             usbIoManager.setListener(null);
             usbIoManager.stop();
@@ -468,32 +504,25 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
             if (usbSerialPort != null) {
                 usbSerialPort.close();
             }
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) { }
         usbSerialPort = null;
     }
 
-    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     * Send / Read / Receive
-     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     private void send(String str) {
-        if(!connected) {
+        if (!connected) {
             Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
             return;
         }
         try {
+            // Append a newline to the string and convert to bytes
             byte[] data = (str + "\n").getBytes();
-
-            // Show in the text area that we’re sending
+            // Directly display the text instead of dumping hex values
             SpannableStringBuilder spn = new SpannableStringBuilder();
-            spn.append("Sending: ").append(str).append("\n");
-            spn.setSpan(
-                    new ForegroundColorSpan(getResources().getColor(R.color.colorSendText)),
-                    0, spn.length(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            );
+            spn.append(str).append("\n");
+            spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorSendText)),
+                    0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             receiveText.append(spn);
-
-            // Write data to USB serial
+            // Write the byte array to the USB serial port
             usbSerialPort.write(data, WRITE_WAIT_MILLIS);
         } catch (Exception e) {
             onRunError(e);
@@ -501,7 +530,7 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     }
 
     private void read() {
-        if(!connected) {
+        if (!connected) {
             Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -516,22 +545,115 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     }
 
     private void receive(byte[] data) {
-        if(data.length > 0) {
-            String receivedText = new String(data);
-            receiveText.append(receivedText);
-        }
+        // Convert the received bytes to a String (using the default charset, or specify one if needed)
+        String receivedText = new String(data);
+        // Build the text to display, e.g., include a header if desired
+        SpannableStringBuilder spn = new SpannableStringBuilder();
+        spn.append("receive: ").append(receivedText).append("\n");
+        // Append the formatted text to the display (TextView, etc.)
+        receiveText.append(spn);
+    }
+
+
+    void status(String str) {
+        SpannableStringBuilder spn = new SpannableStringBuilder(str + "\n");
+        spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)),
+                0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        receiveText.append(spn);
     }
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     * Helper: status messages
+     * Inner class for managing control lines
      * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-    void status(String str) {
-        SpannableStringBuilder spn = new SpannableStringBuilder(str + "\n");
-        spn.setSpan(
-                new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)),
-                0, spn.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-        receiveText.append(spn);
+    class ControlLines {
+        private static final int refreshInterval = 200; // milliseconds
+        private final Runnable runnable;
+        private final ToggleButton rtsBtn, ctsBtn, dtrBtn, dsrBtn, cdBtn, riBtn;
+
+        ControlLines(View view) {
+            // Use a single runnable instance to allow removal of callbacks
+            runnable = this::run;
+            rtsBtn = view.findViewById(R.id.controlLineRts);
+            ctsBtn = view.findViewById(R.id.controlLineCts);
+            dtrBtn = view.findViewById(R.id.controlLineDtr);
+            dsrBtn = view.findViewById(R.id.controlLineDsr);
+            cdBtn  = view.findViewById(R.id.controlLineCd);
+            riBtn  = view.findViewById(R.id.controlLineRi);
+            // Allow toggling RTS and DTR via UI
+            rtsBtn.setOnClickListener(this::toggle);
+            dtrBtn.setOnClickListener(this::toggle);
+        }
+
+        private void toggle(View v) {
+            ToggleButton btn = (ToggleButton) v;
+            if (!connected) {
+                btn.setChecked(!btn.isChecked());
+                Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String ctrl = "";
+            try {
+                if (btn.equals(rtsBtn)) {
+                    ctrl = "RTS";
+                    usbSerialPort.setRTS(btn.isChecked());
+                }
+                if (btn.equals(dtrBtn)) {
+                    ctrl = "DTR";
+                    usbSerialPort.setDTR(btn.isChecked());
+                }
+            } catch (IOException e) {
+                status("set" + ctrl + "() failed: " + e.getMessage());
+            }
+        }
+
+        private void run() {
+            if (!connected)
+                return;
+            try {
+                EnumSet<UsbSerialPort.ControlLine> lines = usbSerialPort.getControlLines();
+                rtsBtn.setChecked(lines.contains(UsbSerialPort.ControlLine.RTS));
+                ctsBtn.setChecked(lines.contains(UsbSerialPort.ControlLine.CTS));
+                dtrBtn.setChecked(lines.contains(UsbSerialPort.ControlLine.DTR));
+                dsrBtn.setChecked(lines.contains(UsbSerialPort.ControlLine.DSR));
+                cdBtn.setChecked(lines.contains(UsbSerialPort.ControlLine.CD));
+                riBtn.setChecked(lines.contains(UsbSerialPort.ControlLine.RI));
+                mainLooper.postDelayed(runnable, refreshInterval);
+            } catch (Exception e) {
+                status("getControlLines() failed: " + e.getMessage() + " -> stopped control line refresh");
+            }
+        }
+
+        void start() {
+            if (!connected)
+                return;
+            try {
+                EnumSet<UsbSerialPort.ControlLine> supported = usbSerialPort.getSupportedControlLines();
+                if (!supported.contains(UsbSerialPort.ControlLine.RTS)) rtsBtn.setVisibility(View.INVISIBLE);
+                if (!supported.contains(UsbSerialPort.ControlLine.CTS)) ctsBtn.setVisibility(View.INVISIBLE);
+                if (!supported.contains(UsbSerialPort.ControlLine.DTR)) dtrBtn.setVisibility(View.INVISIBLE);
+                if (!supported.contains(UsbSerialPort.ControlLine.DSR)) dsrBtn.setVisibility(View.INVISIBLE);
+                if (!supported.contains(UsbSerialPort.ControlLine.CD))  cdBtn.setVisibility(View.INVISIBLE);
+                if (!supported.contains(UsbSerialPort.ControlLine.RI))  riBtn.setVisibility(View.INVISIBLE);
+                run();
+            } catch (Exception e) {
+                Toast.makeText(getActivity(), "getSupportedControlLines() failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                rtsBtn.setVisibility(View.INVISIBLE);
+                ctsBtn.setVisibility(View.INVISIBLE);
+                dtrBtn.setVisibility(View.INVISIBLE);
+                dsrBtn.setVisibility(View.INVISIBLE);
+                cdBtn.setVisibility(View.INVISIBLE);
+                riBtn.setVisibility(View.INVISIBLE);
+            }
+        }
+
+        void stop() {
+            mainLooper.removeCallbacks(runnable);
+            rtsBtn.setChecked(false);
+            ctsBtn.setChecked(false);
+            dtrBtn.setChecked(false);
+            dsrBtn.setChecked(false);
+            cdBtn.setChecked(false);
+            riBtn.setChecked(false);
+        }
     }
 }

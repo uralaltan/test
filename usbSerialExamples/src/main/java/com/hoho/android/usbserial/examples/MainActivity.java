@@ -10,7 +10,7 @@ import androidx.fragment.app.FragmentManager;
 
 public class MainActivity extends AppCompatActivity implements FragmentManager.OnBackStackChangedListener {
 
-    private static final int SKIP_TO_TERMINAL = 1;
+    private static final int SKIP_TO_TERMINAL = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

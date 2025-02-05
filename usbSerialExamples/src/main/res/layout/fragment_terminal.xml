@@ -5,7 +5,83 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingBottom="48dp"
+    android:paddingHorizontal="16dp"
+    android:paddingTop="16dp"
     android:background="@color/colorBackground">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ToggleButton
+            android:id="@+id/controlLineRts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="48sp"
+            android:textOff="RTS"
+            android:textOn="RTS" />
+
+        <ToggleButton
+            android:id="@+id/controlLineCts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="48sp"
+            android:clickable="false"
+            android:textColor="@android:color/secondary_text_dark"
+            android:textOff="CTS"
+            android:textOn="CTS" />
+
+        <View
+            android:layout_height="match_parent"
+            android:layout_width="6dp" />
+
+        <ToggleButton
+            android:id="@+id/controlLineDtr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="48sp"
+            android:textOff="DTR"
+            android:textOn="DTR" />
+
+        <ToggleButton
+            android:id="@+id/controlLineDsr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:minWidth="48sp"
+            android:textColor="@android:color/secondary_text_dark"
+            android:textOff="DSR"
+            android:textOn="DSR" />
+
+        <View
+            android:layout_height="match_parent"
+            android:layout_width="6dp" />
+
+        <ToggleButton
+            android:id="@+id/controlLineCd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:minWidth="48sp"
+            android:textColor="@android:color/secondary_text_dark"
+            android:textOff="CD"
+            android:textOn="CD" />
+
+        <ToggleButton
+            android:id="@+id/controlLineRi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="48sp"
+            android:clickable="false"
+            android:textColor="@android:color/secondary_text_dark"
+            android:textOff="RI"
+            android:textOn="RI" />
+
+    </LinearLayout>
+
 
     <!-- A big text area that shows incoming data -->
     <TextView
@@ -24,7 +100,18 @@
         android:id="@+id/button_go_location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Go to LOCATION page"
+        android:text="ADXL345"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_go_rotary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rotary Encoder"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <!-- "Go to ACTUATOR page" -->
@@ -32,7 +119,9 @@
         android:id="@+id/button_go_actuator"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Go to ACTUATOR page"
+        android:text="Linear Actuator"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <!-- "Go to LOAD CELL page" -->
@@ -40,7 +129,9 @@
         android:id="@+id/button_go_loadcell"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Go to LOAD CELL page"
+        android:text="Load Cell"
+        android:textAllCaps="false"
+        android:stateListAnimator="@null"
         android:background="@color/colorLightBackground" />
 
     <!-- "Go to LINEAR POT page" -->
@@ -48,22 +139,48 @@
         android:id="@+id/button_go_linear_pot"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Go to LINEAR POT page"
-        android:background="@color/colorLightBackground" />
+        android:text="Linear Potentiometer"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground"
+        android:stateListAnimator="@null"/>
 
     <!-- ================== LOCATION MODE BUTTONS ================== -->
     <Button
         android:id="@+id/button_location_on"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Location ON"
+        android:text="Location On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <Button
         android:id="@+id/button_location_off"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Location OFF"
+        android:text="Location Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <!-- Rotary  -->
+
+    <Button
+        android:id="@+id/button_rotary_on"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rotary On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_rotary_off"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rotary Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <!-- ================== ACTUATOR MODE BUTTONS ================== -->
@@ -71,14 +188,18 @@
         android:id="@+id/button_actuator_on"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Actuator ON"
+        android:text="Actuator On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <Button
         android:id="@+id/button_actuator_off"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Actuator OFF"
+        android:text="Actuator Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <!-- ================== LOAD CELL MODE BUTTONS ================== -->
@@ -86,14 +207,18 @@
         android:id="@+id/button_loadcell_on"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="LoadCell ON"
+        android:text="Load Cell On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <Button
         android:id="@+id/button_loadcell_off"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="LoadCell OFF"
+        android:text="Load Cell Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <!-- ================== LINEAR POT MODE BUTTONS ================== -->
@@ -101,14 +226,18 @@
         android:id="@+id/button_linearpot_on"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Linear Pot ON"
+        android:text="Linear Potentiometer On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <Button
         android:id="@+id/button_linearpot_off"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Linear Pot OFF"
+        android:text="Linear Potentiometer Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <!-- ============ Send/Receive elements ============ -->
@@ -116,13 +245,17 @@
         android:id="@+id/receive_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:stateListAnimator="@null"
         android:text="Read"
+        android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
 
     <LinearLayout
+        android:id="@+id/send_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" >
+        android:orientation="horizontal"
+        android:visibility="gone">
 
         <EditText
             android:id="@+id/send_text"
