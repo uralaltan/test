@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
@@ -35,15 +36,27 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.hoho.android.usbserial.util.HexDump;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
+import com.github.mikephil.charting.charts.LineChart;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TerminalFragment extends Fragment implements SerialInputOutputManager.Listener {
 
@@ -59,6 +72,11 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     private boolean withIoManager = true;
     // Custom mode used to show different button groups (e.g., "location", "actuator", etc.)
     private String mode = "main";
+
+    private LineChart lineChart;
+    private List<String> xValues;
+    private List<String> yValues;
+    private List<String> zValues;
 
     // USB connection members
     private UsbSerialPort usbSerialPort;
@@ -187,6 +205,29 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
 
         LinearLayout sendContainer = view.findViewById(R.id.send_container);
 
+        lineChart = view.findViewById(R.id.chart);
+        Description description = new Description();
+        description.setText("Degree");
+        description.setPosition(150f, 15f);
+        lineChart.setDescription(description);
+        lineChart.getAxisRight().setDrawLabels(false);
+
+        xValues = Arrays.asList("Altan", "mEHME", "bBABA");
+
+        XAxis xAxis = lineChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(xValues));
+        xAxis.setLabelCount(4);
+        xAxis.setGranularity(1f);
+
+        YAxis yAxis = lineChart.getAxisLeft();
+        yAxis.setAxisMinimum(0f);
+        yAxis.setAxisMaximum(360f);
+        yAxis.setAxisLineWidth(2f);
+        yAxis.setAxisLineColor(Color.BLACK);
+        yAxis.setLabelCount(10);
+
+
         // Show/hide groups depending on mode (if mode is "main", show go buttons; otherwise show the respective ON/OFF buttons)
         switch (mode) {
             case "location":
@@ -208,6 +249,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
                 buttonGoRotary.setVisibility(View.GONE);
+
+                lineChart.setVisibility(View.VISIBLE);
 
                 buttonLocationOn.setOnClickListener(v -> send("LOCATION_ON"));
                 buttonLocationOff.setOnClickListener(v -> send("LOCATION_OFF"));
@@ -233,6 +276,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLinOff.setVisibility(View.GONE);
                 buttonGoRotary.setVisibility(View.GONE);
 
+                lineChart.setVisibility(View.GONE);
+
                 buttonActOn.setOnClickListener(v -> send("ACT_ON"));
                 buttonActOff.setOnClickListener(v -> send("ACT_OFF"));
                 break;
@@ -256,6 +301,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
                 buttonGoRotary.setVisibility(View.GONE);
+
+                lineChart.setVisibility(View.GONE);
 
                 buttonLoadOn.setOnClickListener(v -> send("LOAD_ON"));
                 buttonLoadOff.setOnClickListener(v -> send("LOAD_OFF"));
@@ -281,6 +328,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
 
+                lineChart.setVisibility(View.GONE);
+
                 buttonLinOn.setOnClickListener(v -> send("LIN_ON"));
                 buttonLinOff.setOnClickListener(v -> send("LIN_OFF"));
                 break;
@@ -305,6 +354,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
 
+                lineChart.setVisibility(View.GONE);
+
                 buttonRotaryOn.setOnClickListener(v -> send("ROT_ON"));
                 buttonRotaryOff.setOnClickListener(v -> send("ROT_OFF"));
                 break;
@@ -314,7 +365,7 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 // Main mode: show the go buttons and hide the ON/OFF buttons
                 buttonGoLocation.setVisibility(View.VISIBLE);
                 buttonGoActuator.setVisibility(View.VISIBLE);
-                buttonGoLoadCell.setVisibility(View.VISIBLE);
+                buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.VISIBLE);
                 buttonGoRotary.setVisibility(View.VISIBLE);
 
@@ -330,6 +381,8 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonRotaryOff.setVisibility(View.GONE);
 
                 sendContainer.setVisibility(View.GONE);
+
+                lineChart.setVisibility(View.GONE);
 
                 buttonGoLocation.setOnClickListener(v -> goToSubPage("location"));
                 buttonGoActuator.setOnClickListener(v -> goToSubPage("actuator"));
@@ -545,14 +598,103 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
     }
 
     private void receive(byte[] data) {
-        // Convert the received bytes to a String (using the default charset, or specify one if needed)
+        // Convert the received bytes to a String.
         String receivedText = new String(data);
-        // Build the text to display, e.g., include a header if desired
+
+        // Check if the string contains the expected "Degrees:" prefix.
+        if(receivedText.contains("Degrees:")) {
+            // Use regex to extract the X, Y and Z degrees.
+            Pattern pattern = Pattern.compile("Degrees: \\[X: ([0-9.]+), Y: ([0-9.]+), Z: ([0-9.]+)\\]");
+            Matcher matcher = pattern.matcher(receivedText);
+            if(matcher.find()) {
+                try {
+                    float x_deg = Float.parseFloat(matcher.group(1));
+                    float y_deg = Float.parseFloat(matcher.group(2));
+                    float z_deg = Float.parseFloat(matcher.group(3));
+
+                    // Update the line chart with the new degrees.
+                    updateLineChart(x_deg, y_deg, z_deg);
+                } catch (NumberFormatException e) {
+                    // In case of a conversion error, do nothing.
+                    return;
+                }
+            }
+        }
+        // Optionally, you can still print or log all received data:
         SpannableStringBuilder spn = new SpannableStringBuilder();
         spn.append("receive: ").append(receivedText).append("\n");
-        // Append the formatted text to the display (TextView, etc.)
         receiveText.append(spn);
     }
+
+    private void updateLineChart(float x_deg, float y_deg, float z_deg) {
+        // Get the chart's current data or create it if null.
+        LineData data = lineChart.getData();
+        if (data == null) {
+            data = new LineData();
+            lineChart.setData(data);
+        }
+
+        // Get or create dataset for X Degrees.
+        LineDataSet xDataSet = (LineDataSet) data.getDataSetByLabel("X Degrees", true);
+        if (xDataSet == null) {
+            xDataSet = new LineDataSet(new ArrayList<Entry>(), "X Degrees");
+            xDataSet.setColor(Color.BLUE);
+            data.addDataSet(xDataSet);
+        }
+
+        // Get or create dataset for Y Degrees.
+        LineDataSet yDataSet = (LineDataSet) data.getDataSetByLabel("Y Degrees", true);
+        if (yDataSet == null) {
+            yDataSet = new LineDataSet(new ArrayList<Entry>(), "Y Degrees");
+            yDataSet.setColor(Color.GREEN);
+            data.addDataSet(yDataSet);
+        }
+
+        // Get or create dataset for Z Degrees.
+        LineDataSet zDataSet = (LineDataSet) data.getDataSetByLabel("Z Degrees", true);
+        if (zDataSet == null) {
+            zDataSet = new LineDataSet(new ArrayList<Entry>(), "Z Degrees");
+            zDataSet.setColor(Color.RED);
+            data.addDataSet(zDataSet);
+        }
+
+        // Use the entry count of the dataset as the new x value.
+        int newEntryIndex = xDataSet.getEntryCount();
+
+        // If the number of entries is 20 or more, remove the first entry from each dataset.
+        if (newEntryIndex >= 20) {
+            xDataSet.removeEntry(0);
+            yDataSet.removeEntry(0);
+            zDataSet.removeEntry(0);
+
+            // After removal, re-index all entries so the x-axis remains sequential.
+            for (int i = 0; i < xDataSet.getEntryCount(); i++) {
+                Entry entry = xDataSet.getEntryForIndex(i);
+                entry.setX(i);
+            }
+            for (int i = 0; i < yDataSet.getEntryCount(); i++) {
+                Entry entry = yDataSet.getEntryForIndex(i);
+                entry.setX(i);
+            }
+            for (int i = 0; i < zDataSet.getEntryCount(); i++) {
+                Entry entry = zDataSet.getEntryForIndex(i);
+                entry.setX(i);
+            }
+            newEntryIndex = xDataSet.getEntryCount();
+        }
+
+        // Add new entries to each dataset.
+        data.addEntry(new Entry(newEntryIndex, x_deg), data.getIndexOfDataSet(xDataSet));
+        data.addEntry(new Entry(newEntryIndex, y_deg), data.getIndexOfDataSet(yDataSet));
+        data.addEntry(new Entry(newEntryIndex, z_deg), data.getIndexOfDataSet(zDataSet));
+
+        // Notify the chart about the data change and refresh it.
+        data.notifyDataChanged();
+        lineChart.notifyDataSetChanged();
+        lineChart.invalidate();
+    }
+
+
 
 
     void status(String str) {
