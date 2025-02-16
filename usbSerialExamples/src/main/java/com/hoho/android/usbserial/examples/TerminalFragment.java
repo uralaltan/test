@@ -186,6 +186,10 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
         });
 
         // Custom sub-page buttons for different modes
+        Button buttonGoVibration = view.findViewById(R.id.button_go_vibration);
+        Button buttonGoTemperature = view.findViewById(R.id.button_go_temperature);
+        Button buttonGoVoltage = view.findViewById(R.id.button_go_voltage);
+        Button buttonGoMagnetic = view.findViewById(R.id.button_go_magnetic);
         Button buttonGoLocation = view.findViewById(R.id.button_go_location);
         Button buttonGoActuator = view.findViewById(R.id.button_go_actuator);
         Button buttonGoLoadCell = view.findViewById(R.id.button_go_loadcell);
@@ -202,6 +206,21 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
         Button buttonLinOff = view.findViewById(R.id.button_linearpot_off);
         Button buttonRotaryOn = view.findViewById(R.id.button_rotary_on);
         Button buttonRotaryOff = view.findViewById(R.id.button_rotary_off);
+        Button buttonVibrationOn = view.findViewById(R.id.button_vibration_on);
+        Button buttonVibrationOff = view.findViewById(R.id.button_vibration_off);
+        Button buttonTemperatureOn = view.findViewById(R.id.button_temperature_on);
+        Button buttonTemperatureOff = view.findViewById(R.id.button_temperature_off);
+        Button buttonVoltageOn = view.findViewById(R.id.button_voltage_on);
+        Button buttonVoltageOff = view.findViewById(R.id.button_voltage_off);
+        Button buttonMagneticOn = view.findViewById(R.id.button_magnetic_on);
+        Button buttonMagneticOff = view.findViewById(R.id.button_magnetic_off);
+
+        Button buttonActuator0 = view.findViewById(R.id.button_actuator_0);
+        Button buttonActuator25 = view.findViewById(R.id.button_actuator_25);
+        Button buttonActuator50 = view.findViewById(R.id.button_actuator_50);
+        Button buttonActuator75 = view.findViewById(R.id.button_actuator_75);
+        Button buttonActuator100 = view.findViewById(R.id.button_actuator_100);
+
 
         LinearLayout sendContainer = view.findViewById(R.id.send_container);
 
@@ -230,25 +249,237 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
 
         // Show/hide groups depending on mode (if mode is "main", show go buttons; otherwise show the respective ON/OFF buttons)
         switch (mode) {
-            case "location":
+            case "magnetic":
+                // Hide all go buttons
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                buttonRotaryOn.setVisibility(View.GONE);
-                buttonRotaryOff.setVisibility(View.GONE);
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
 
-                buttonLocationOn.setVisibility(View.VISIBLE);
-                buttonLocationOff.setVisibility(View.VISIBLE);
+                // Hide on/off buttons for other sensors
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
 
+
+                buttonLocationOn.setVisibility(View.GONE);
+                buttonLocationOff.setVisibility(View.GONE);
                 buttonActOn.setVisibility(View.GONE);
                 buttonActOff.setVisibility(View.GONE);
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show magnetic on/off buttons
+                buttonMagneticOn.setVisibility(View.VISIBLE);
+                buttonMagneticOff.setVisibility(View.VISIBLE);
+
+                lineChart.setVisibility(View.GONE);
+
+                buttonMagneticOn.setOnClickListener(v -> send("AS5600_ON"));
+                buttonMagneticOff.setOnClickListener(v -> send("AS5600_OFF"));
+                break;
+
+            case "vibration":
+                // Hide all go buttons
+                buttonGoLocation.setVisibility(View.GONE);
+                buttonGoActuator.setVisibility(View.GONE);
+                buttonGoLoadCell.setVisibility(View.GONE);
+                buttonGoLinear.setVisibility(View.GONE);
                 buttonGoRotary.setVisibility(View.GONE);
+
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
+
+                // Hide on/off buttons for other sensors
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+                buttonLocationOn.setVisibility(View.GONE);
+                buttonLocationOff.setVisibility(View.GONE);
+                buttonActOn.setVisibility(View.GONE);
+                buttonActOff.setVisibility(View.GONE);
+                buttonLoadOn.setVisibility(View.GONE);
+                buttonLoadOff.setVisibility(View.GONE);
+                buttonLinOn.setVisibility(View.GONE);
+                buttonLinOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show vibration on/off buttons
+                buttonVibrationOn.setVisibility(View.VISIBLE);
+                buttonVibrationOff.setVisibility(View.VISIBLE);
+
+                lineChart.setVisibility(View.GONE);
+
+                buttonVibrationOn.setOnClickListener(v -> send("VIBRATION_ON"));
+                buttonVibrationOff.setOnClickListener(v -> send("VIBRATION_OFF"));
+                break;
+
+            case "voltage":
+                // Hide all go buttons
+                buttonGoLocation.setVisibility(View.GONE);
+                buttonGoActuator.setVisibility(View.GONE);
+                buttonGoLoadCell.setVisibility(View.GONE);
+                buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
+
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
+
+                // Hide on/off buttons for other sensors
+
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+
+                buttonLocationOn.setVisibility(View.GONE);
+                buttonLocationOff.setVisibility(View.GONE);
+                buttonActOn.setVisibility(View.GONE);
+                buttonActOff.setVisibility(View.GONE);
+                buttonLoadOn.setVisibility(View.GONE);
+                buttonLoadOff.setVisibility(View.GONE);
+                buttonLinOn.setVisibility(View.GONE);
+                buttonLinOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+
+                // Show voltage on/off buttons
+                buttonVoltageOn.setVisibility(View.VISIBLE);
+                buttonVoltageOff.setVisibility(View.VISIBLE);
+
+                lineChart.setVisibility(View.GONE);
+
+                buttonVoltageOn.setOnClickListener(v -> send("VOLT_ON"));
+                buttonVoltageOff.setOnClickListener(v -> send("VOLT_OFF"));
+                break;
+
+            case "temperature":
+                // Hide all go buttons
+                buttonGoLocation.setVisibility(View.GONE);
+                buttonGoActuator.setVisibility(View.GONE);
+                buttonGoLoadCell.setVisibility(View.GONE);
+                buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
+
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
+
+                // Hide on/off buttons for other sensors
+
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+
+
+                buttonLocationOn.setVisibility(View.GONE);
+                buttonLocationOff.setVisibility(View.GONE);
+                buttonActOn.setVisibility(View.GONE);
+                buttonActOff.setVisibility(View.GONE);
+                buttonLoadOn.setVisibility(View.GONE);
+                buttonLoadOff.setVisibility(View.GONE);
+                buttonLinOn.setVisibility(View.GONE);
+                buttonLinOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show temperature on/off buttons
+                buttonTemperatureOn.setVisibility(View.VISIBLE);
+                buttonTemperatureOff.setVisibility(View.VISIBLE);
+
+                lineChart.setVisibility(View.GONE);
+
+                buttonTemperatureOn.setOnClickListener(v -> send("TEMP_ON"));
+                buttonTemperatureOff.setOnClickListener(v -> send("TEMP_OFF"));
+                break;
+
+            case "location":
+                // Hide all go buttons except the ones not needed
+                buttonGoLocation.setVisibility(View.GONE);
+                buttonGoActuator.setVisibility(View.GONE);
+                buttonGoLoadCell.setVisibility(View.GONE);
+                buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
+
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
+
+                // Hide on/off buttons for other sensors
+
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+                buttonActOn.setVisibility(View.GONE);
+                buttonActOff.setVisibility(View.GONE);
+                buttonLoadOn.setVisibility(View.GONE);
+                buttonLoadOff.setVisibility(View.GONE);
+                buttonLinOn.setVisibility(View.GONE);
+                buttonLinOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show location on/off buttons
+                buttonLocationOn.setVisibility(View.VISIBLE);
+                buttonLocationOff.setVisibility(View.VISIBLE);
 
                 lineChart.setVisibility(View.VISIBLE);
 
@@ -261,25 +492,44 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                buttonRotaryOn.setVisibility(View.GONE);
-                buttonRotaryOff.setVisibility(View.GONE);
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
 
-                buttonActOn.setVisibility(View.VISIBLE);
-                buttonActOff.setVisibility(View.VISIBLE);
-
+                // Hide on/off buttons for other sensors
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
-                buttonGoRotary.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show actuator on/off buttons
+                buttonActOn.setVisibility(View.VISIBLE);
+                buttonActOff.setVisibility(View.VISIBLE);
 
                 lineChart.setVisibility(View.GONE);
 
                 buttonActOn.setOnClickListener(v -> send("ACT_ON"));
                 buttonActOff.setOnClickListener(v -> send("ACT_OFF"));
+                buttonActuator0.setOnClickListener(v -> send(("ACT_0")));
+                buttonActuator25.setOnClickListener(v -> send(("ACT_25")));
+                buttonActuator50.setOnClickListener(v -> send(("ACT_50")));
+                buttonActuator75.setOnClickListener(v -> send(("ACT_75")));
+                buttonActuator100.setOnClickListener(v -> send(("ACT_100")));
                 break;
 
             case "loadcell":
@@ -287,12 +537,21 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                buttonRotaryOn.setVisibility(View.GONE);
-                buttonRotaryOff.setVisibility(View.GONE);
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
 
-                buttonLoadOn.setVisibility(View.VISIBLE);
-                buttonLoadOff.setVisibility(View.VISIBLE);
+                // Hide on/off buttons for other sensors
+
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+
 
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
@@ -300,7 +559,20 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonActOff.setVisibility(View.GONE);
                 buttonLinOn.setVisibility(View.GONE);
                 buttonLinOff.setVisibility(View.GONE);
-                buttonGoRotary.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show loadcell on/off buttons
+                buttonLoadOn.setVisibility(View.VISIBLE);
+                buttonLoadOff.setVisibility(View.VISIBLE);
 
                 lineChart.setVisibility(View.GONE);
 
@@ -309,17 +581,25 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 break;
 
             case "linear":
-                buttonGoRotary.setVisibility(View.GONE);
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                buttonRotaryOn.setVisibility(View.GONE);
-                buttonRotaryOff.setVisibility(View.GONE);
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
 
-                buttonLinOn.setVisibility(View.VISIBLE);
-                buttonLinOff.setVisibility(View.VISIBLE);
+                // Hide on/off buttons for other sensors
+
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+
 
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
@@ -327,6 +607,20 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonActOff.setVisibility(View.GONE);
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
+                buttonRotaryOn.setVisibility(View.GONE);
+                buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show linear on/off buttons
+                buttonLinOn.setVisibility(View.VISIBLE);
+                buttonLinOff.setVisibility(View.VISIBLE);
 
                 lineChart.setVisibility(View.GONE);
 
@@ -335,17 +629,26 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 break;
 
             case "rotary":
-                buttonGoRotary.setVisibility(View.GONE);
                 buttonGoLocation.setVisibility(View.GONE);
                 buttonGoActuator.setVisibility(View.GONE);
                 buttonGoLoadCell.setVisibility(View.GONE);
                 buttonGoLinear.setVisibility(View.GONE);
+                buttonGoRotary.setVisibility(View.GONE);
 
-                buttonRotaryOn.setVisibility(View.VISIBLE);
-                buttonRotaryOff.setVisibility(View.VISIBLE);
+                buttonGoTemperature.setVisibility(View.GONE);
+                buttonGoMagnetic.setVisibility(View.GONE);
+                buttonGoVoltage.setVisibility(View.GONE);
+                buttonGoVibration.setVisibility(View.GONE);
 
-                buttonLinOn.setVisibility(View.GONE);
-                buttonLinOff.setVisibility(View.GONE);
+
+                // Hide on/off buttons for other sensors
+
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
+
 
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
@@ -353,6 +656,20 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonActOff.setVisibility(View.GONE);
                 buttonLoadOn.setVisibility(View.GONE);
                 buttonLoadOff.setVisibility(View.GONE);
+                buttonLinOn.setVisibility(View.GONE);
+                buttonLinOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
+
+                // Show rotary on/off buttons
+                buttonRotaryOn.setVisibility(View.VISIBLE);
+                buttonRotaryOff.setVisibility(View.VISIBLE);
 
                 lineChart.setVisibility(View.GONE);
 
@@ -362,13 +679,19 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
 
             case "main":
             default:
-                // Main mode: show the go buttons and hide the ON/OFF buttons
+                // Main mode: show the go buttons (as defined by your design) and hide all on/off buttons
                 buttonGoLocation.setVisibility(View.VISIBLE);
                 buttonGoActuator.setVisibility(View.VISIBLE);
-                buttonGoLoadCell.setVisibility(View.GONE);
+                buttonGoLoadCell.setVisibility(View.VISIBLE);
                 buttonGoLinear.setVisibility(View.VISIBLE);
                 buttonGoRotary.setVisibility(View.VISIBLE);
 
+                // Hide all on/off buttons
+                buttonActuator0.setVisibility(View.GONE);
+                buttonActuator25.setVisibility(View.GONE);
+                buttonActuator50.setVisibility(View.GONE);
+                buttonActuator75.setVisibility(View.GONE);
+                buttonActuator100.setVisibility(View.GONE);
                 buttonLocationOn.setVisibility(View.GONE);
                 buttonLocationOff.setVisibility(View.GONE);
                 buttonActOn.setVisibility(View.GONE);
@@ -379,9 +702,16 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonLinOff.setVisibility(View.GONE);
                 buttonRotaryOn.setVisibility(View.GONE);
                 buttonRotaryOff.setVisibility(View.GONE);
+                buttonMagneticOn.setVisibility(View.GONE);
+                buttonMagneticOff.setVisibility(View.GONE);
+                buttonVibrationOn.setVisibility(View.GONE);
+                buttonVibrationOff.setVisibility(View.GONE);
+                buttonTemperatureOn.setVisibility(View.GONE);
+                buttonTemperatureOff.setVisibility(View.GONE);
+                buttonVoltageOn.setVisibility(View.GONE);
+                buttonVoltageOff.setVisibility(View.GONE);
 
                 sendContainer.setVisibility(View.GONE);
-
                 lineChart.setVisibility(View.GONE);
 
                 buttonGoLocation.setOnClickListener(v -> goToSubPage("location"));
@@ -389,9 +719,12 @@ public class TerminalFragment extends Fragment implements SerialInputOutputManag
                 buttonGoLoadCell.setOnClickListener(v -> goToSubPage("loadcell"));
                 buttonGoLinear.setOnClickListener(v -> goToSubPage("linear"));
                 buttonGoRotary.setOnClickListener(v -> goToSubPage("rotary"));
+                buttonGoVibration.setOnClickListener(v -> goToSubPage("vibration"));
+                buttonGoTemperature.setOnClickListener(v -> goToSubPage("temperature"));
+                buttonGoVoltage.setOnClickListener(v -> goToSubPage("voltage"));
+                buttonGoMagnetic.setOnClickListener(v -> goToSubPage("magnetic"));
                 break;
         }
-
         // If using IO Manager, hide the manual read button; otherwise attach its listener.
         if (withIoManager) {
             receiveBtn.setVisibility(View.GONE);

@@ -101,6 +101,42 @@
     <!-- ================== MAIN MODE BUTTONS ================== -->
     <!-- "Go to LOCATION page" -->
     <Button
+        android:id="@+id/button_go_vibration"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Vibration Motor"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_go_temperature"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Temperature Sensor"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_go_voltage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Voltage Sensor"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_go_magnetic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="AS5600"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
         android:id="@+id/button_go_location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -147,6 +183,82 @@
         android:textAllCaps="false"
         android:background="@color/colorLightBackground"
         android:stateListAnimator="@null"/>
+
+    <!-- ================== VIBRATION MODE BUTTONS ================== -->
+    <Button
+        android:id="@+id/button_vibration_on"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Vibration On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_vibration_off"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Vibration Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <!-- ================== TEMPERATURE MODE BUTTONS ================== -->
+    <Button
+        android:id="@+id/button_temperature_on"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Temperature On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_temperature_off"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Temperature Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <!-- ================== VOLTAGE MODE BUTTONS ================== -->
+    <Button
+        android:id="@+id/button_voltage_on"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Voltage On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_voltage_off"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Voltage Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <!-- ================== MAGNETIC (AS5600) MODE BUTTONS ================== -->
+    <Button
+        android:id="@+id/button_magnetic_on"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Magnetic On"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_magnetic_off"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Magnetic Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
 
     <!-- ================== LOCATION MODE BUTTONS ================== -->
     <Button
@@ -202,6 +314,51 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Actuator Off"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_actuator_0"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Move Actuator to 0%"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_actuator_25"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Move Actuator to 25%"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_actuator_50"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Move Actuator to 50%"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_actuator_75"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Move Actuator to 75%"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:background="@color/colorLightBackground" />
+
+    <Button
+        android:id="@+id/button_actuator_100"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Move Actuator to 100%"
         android:stateListAnimator="@null"
         android:textAllCaps="false"
         android:background="@color/colorLightBackground" />
